@@ -22,8 +22,8 @@ def load_tokens(server_name):
         elif server_name == "PK":
             with open("token_pk.json", "r") as f:
                 tokens = json.load(f)
-        elif server_name == "BD":
-            with open("token_bd.json", "r") as f:
+        elif server_name == "ME":
+            with open("token_me.json", "r") as f:
                 tokens = json.load(f)
         elif server_name in {"BR", "US", "SAC", "NA"}:
             with open("token_br.json", "r") as f:
