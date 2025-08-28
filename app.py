@@ -16,8 +16,8 @@ app = Flask(__name__)
 
 def load_tokens(server_name):
     try:
-        if server_name == "IND":
-            with open("token_ind.json", "r") as f:
+        if server_name == "BD":
+            with open("token_bd.json", "r") as f:
                 tokens = json.load(f)
         elif server_name == "PK":
             with open("token_pk.json", "r") as f:
@@ -32,7 +32,7 @@ def load_tokens(server_name):
             with open("token_br.json", "r") as f:
                 tokens = json.load(f)
         else:
-            with open("token_bd.json", "r") as f:
+            with open("token_ind.json", "r") as f:
                 tokens = json.load(f)
         return tokens
     except Exception as e:
