@@ -47,6 +47,8 @@ def create_protobuf_message(user_id, region):
         message = like_pb2.like()
         message.uid = int(user_id)
         message.region = region
+        if hasattr(message, 'ob_version'):
+            message.ob_version = "OB48"
         return message.SerializeToString()
     except Exception as e:
         app.logger.error(f"Error creating protobuf message: {e}")
@@ -64,13 +66,14 @@ async def send_request(encrypted_uid, token, url):
             'Expect': "100-continue",
             'X-Unity-Version': "2018.4.11f1",
             'X-GA': "v1 1",
-            'ReleaseVersion': "OB50"
+            'ReleaseVersion': "OB50" #Fixed
         }
         async with aiohttp.ClientSession() as session:
             async with session.post(url, data=edata, headers=headers) as response:
                 if response.status != 200:
-                    app.logger.error(f"Request failed with status code: {response.status}")
-                    return response.status
+                    text = await response.text()
+                    app.logger.error(f"Request failed with status code: {response.status} and response: {text}")
+                    return None
                 return await response.text()
     except Exception as e:
         app.logger.error(f"Exception in send_request: {e}")
@@ -92,7 +95,7 @@ async def send_multiple_requests(uid, server_name, url):
         if tokens is None:
             app.logger.error("Failed to load tokens.")
             return None
-        for i in range(1000):
+        for i in range(100):
             token = tokens[i % len(tokens)]["token"]
             tasks.append(send_request(encrypted_uid, token, url))
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -106,6 +109,9 @@ def create_protobuf(uid):
         message = uid_generator_pb2.uid_generator()
         message.saturn_ = int(uid)
         message.garena = 1
+ 
+        if hasattr(message, 'ob_version'):
+            message.ob_version = "OB48"
         return message.SerializeToString()
     except Exception as e:
         app.logger.error(f"Error creating uid protobuf: {e}")
@@ -139,8 +145,10 @@ def make_request(encrypt, server_name, token):
             'ReleaseVersion': "OB50"
         }
         response = requests.post(url, data=edata, headers=headers, verify=False)
-        hex_data = response.content.hex()
-        binary = bytes.fromhex(hex_data)
+        if response.status_code != 200:
+            app.logger.error(f"Request failed with status code: {response.status_code} and response: {response.text}")
+            return None
+        binary = response.content
         decode = decode_protobuf(binary)
         if decode is None:
             app.logger.error("Protobuf decoding returned None.")
@@ -217,8 +225,8 @@ def handle_requests():
             status = 1 if like_given != 0 else 2
             result = {
                 "LikesGivenByAPI": like_given,
-                "LikesbeforeCommand": before_like,
                 "LikesafterCommand": after_like,
+                "LikesbeforeCommand": before_like,
                 "PlayerNickname": player_name,
                 "UID": player_uid,
                 "status": status
